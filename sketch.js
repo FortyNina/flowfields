@@ -14,14 +14,14 @@ var scl = 10;
 var numParticles = 100;
 
 //how thick the particles are
-var particleWeight = 2;
+var particleWeight = .2;
 
 //how fast the particles go
 var particleSpeed = 5;
 
 
 //--------------------------------------------------------------------------------
-var cols, rows;
+var c, r;
 
 var col0, col1, col2, col3;
 
@@ -30,14 +30,21 @@ var zOffset = 0;
 var particles = [numParticles];
 var flowField = [];
 
+var videoFeed;
+
+var colorTimer = 3000;
+
+
+
+
+
 
 function setup() {
   createCanvas(500, 400);
-  pixelDensity(1);
-  cols = floor(width/scl);
-  rows = floor(height/scl);
+  c = floor(width/scl);
+  r = floor(height/scl);
 
-  flowField = new Array(cols * rows);
+  flowField = [c * r];
   
   col0 = getRandomColor();
   col1 = getRandomColor();
@@ -49,19 +56,35 @@ function setup() {
     particles[i].setCol();
   }
 
-    background(col0);
+  background(col0);
 
-  
+    
+
 }
 
 function draw() {
+
+  //background(col0);
+
+  colorTimer --;
+  if(colorTimer < 0){
+    colorTimer = 3000;
+    setNewColors();
+  }
+   setFlowField();
+   setParticles();
+
+}
+
+
+function setFlowField(){
+
   var yOffset = 0;
 
-
-  for (var y = 0; y < rows; y++) {
+  for (var y = 0; y < r; y++) {
     var xOffset = 0;
-    for(var x = 0;x < cols; x++){
-      var index = (x + y * cols);
+    for(var x = 0;x < c; x++){
+      var index = (x + y * c);
       var angle = noise(xOffset, yOffset, zOffset) * TWO_PI;
       
       xOffset += inc;
@@ -85,22 +108,24 @@ function draw() {
     zOffset += flowFieldEvolveRate;
 
   }
-  for(var i = 0; i< particles.length;i++){
-    particles[i].follow(flowField);
-    particles[i].update();
-    particles[i].show();
-    particles[i].edges();
-  }
-
 }
 
 
+function setParticles(){
+  for(var i = 0; i< particles.length;i++){
+    particles[i].follow(flowField);
+    particles[i].update();
+    particles[i].edges();
+    particles[i].show();
+  }
+}
 
 
 function getRandomColor(){
   var col = [random(255),random(255),random(255)];
   return col;
 }
+
 
 function getColorFromBrightness(brightness){
   if(brightness/255 < .25){
@@ -113,6 +138,15 @@ function getColorFromBrightness(brightness){
     return col2;
   }
   return col3;
-  
 }
+
+function setNewColors(){
+  col0 = getRandomColor();
+  col1 = getRandomColor();
+  col2 = getRandomColor();
+}
+
+
+
+
 
