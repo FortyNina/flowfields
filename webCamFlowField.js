@@ -46,7 +46,6 @@ function draw() {
 
 
 function drawPixels(){
-  var yOffset = 0;
 
   video.size(width/scl, height/scl);
 
@@ -54,7 +53,6 @@ function drawPixels(){
   loadPixels();
   
   for(let y = 0; y < video.height; y++){ 
-    var xOffset = 0;
     for(let x = 0; x < video.width; x++){
      var index = (x + y * video.width) * 4;
       var r =  video.pixels[index+0];
@@ -65,32 +63,9 @@ function drawPixels(){
       var w = map(bright, 0, 255, 0 , scl) / 2;
 
 
-       var angle = w ;
-      
-       xOffset += inc;
-       var v = p5.Vector.fromAngle(angle);
-       v.setMag(1);
-       flowFieldCam[index] = v;
-      
-
-
-      fill(angle);
-      stroke(col1);
-      push();
-      translate(x*scl,y*scl);
-      rotate(v.heading());
-      strokeWeight(1);
-      //line(0,0,scl,0);
-      pop();
-      
-      // noStroke();
-      // rectMode(CENTER);
-      // fill(255);
-      // ellipse(x*scl, y*scl, w, w);    
-      xOffset += inc;
+    
 
     }
-    yOffset += inc;
 
   }  
 

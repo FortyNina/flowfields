@@ -1,4 +1,5 @@
 
+//Based on Daniel Schiffman's video: https://www.youtube.com/watch?v=BjoM9oKOAKY
 
 //SETTINGS - to be added as DOM elements later :)
 //how fast the flowfield vectors change
@@ -8,7 +9,7 @@ var flowFieldEvolveRate = .00001;
 var inc = .05;
 
 //scale of grid, or how many rows* cols elements there are
-var scl = 10;
+var size = 10;
 
 //number of particles that are affected by flow field
 var numParticles = 100;
@@ -18,65 +19,95 @@ var particleWeight = .2;
 
 //how fast the particles go
 var particleSpeed = 5;
+//--------------------------------------------------------------------------------
 
+//DOM-----------------------------------------------------------------------------
+
+var randomizeButton;
+var backColorPicker;
+var col1ColorPicker;
+var col2ColorPicker;
 
 //--------------------------------------------------------------------------------
+
 var c, r;
-
-var col0, col1, col2, col3;
-
+var backCol, col1, col2, col3, prevBackCol;
 var zOffset = 0;
-
 var particles = [numParticles];
 var flowField = [];
-
 var videoFeed;
-
 var colorTimer = 3000;
-
-
 
 
 
 
 function setup() {
   createCanvas(500, 400);
-  c = floor(width/scl);
-  r = floor(height/scl);
 
-  flowField = [c * r];
-  
-  col0 = getRandomColor();
+  //Set initial random colors when first loaded
+  backCol = getRandomColor();
+  prevBackCol = getRandomColor();
   col1 = getRandomColor();
   col2 = getRandomColor();
   col3 = getRandomColor();
 
+  //set the number of rows and columns for the flow field
+  c = floor(width/size);
+  r = floor(height/size);
+  flowField = [c * r];
+  
+  //create particles
   for(var i = 0; i< numParticles;i ++){
     particles[i] = new Particle(particleSpeed, particleWeight);
     particles[i].setCol();
   }
 
-  background(col0);
+  background(backCol);
 
-    
+  //DOM SETUP---------------------
 
+  randomizeButton = createButton('Randomize !');
+  randomizeButton.position(19, 450);
+  randomizeButton.mousePressed(randomize);
+
+  backColorPicker = createInput(RGBToHex(int(backCol[0]),int(backCol[1]),int(backCol[2])), 'color');
+  backColorPicker.position(19, 475);
+
+  col1ColorPicker = createInput(RGBToHex(int(col1[0]),int(col1[1]),int(col1[2])), 'color');
+  col1ColorPicker.position(19, 505);
+  
+  col2ColorPicker = createInput(RGBToHex(int(col2[0]),int(col2[1]),int(col2[2])), 'color');
+  col2ColorPicker.position(19, 535);
+
+  //------------------------------
 }
 
 function draw() {
 
-  //background(col0);
+  //background(backCol);
 
-  colorTimer --;
-  if(colorTimer < 0){
-    colorTimer = 3000;
-    setNewColors();
+  hexToRGB(col1ColorPicker.value(), col1);
+  hexToRGB(col2ColorPicker.value(), col2);
+  hexToRGB(backColorPicker.value(), prevBackCol);
+
+  var modified = false;
+  for(var i = 0; i<prevBackCol.length;i++){
+    if(prevBackCol[i] != backCol[i])
+      modified = true;
   }
+
+  if(modified) {
+      hexToRGB(backColorPicker.value(), backCol);
+      clearScreen();
+
+  }
+
    setFlowField();
    setParticles();
 
 }
 
-
+//set each vector in the flow field, based on a  noise value.
 function setFlowField(){
 
   var yOffset = 0;
@@ -85,24 +116,12 @@ function setFlowField(){
     var xOffset = 0;
     for(var x = 0;x < c; x++){
       var index = (x + y * c);
-      var angle = noise(xOffset, yOffset, zOffset) * TWO_PI;
+      var angle = noise(xOffset, yOffset, zOffset) * TWO_PI ;
       
       xOffset += inc;
       var v = p5.Vector.fromAngle(angle);
       v.setMag(1);
       flowField[index] = v;
-
-
-      fill(angle);
-      stroke(col1);
-      push();
-      translate(x*scl,y*scl);
-      rotate(v.heading());
-      strokeWeight(1);
-      //line(0,0,scl,0);
-      pop();
-
-      xOffset += inc;
     }
     yOffset += inc;
     zOffset += flowFieldEvolveRate;
@@ -110,7 +129,7 @@ function setFlowField(){
   }
 }
 
-
+//update each particle
 function setParticles(){
   for(var i = 0; i< particles.length;i++){
     particles[i].follow(flowField);
@@ -120,16 +139,16 @@ function setParticles(){
   }
 }
 
-
+//return a random color
 function getRandomColor(){
   var col = [random(255),random(255),random(255)];
   return col;
 }
 
-
+//based on a brightness, find a cutoff for a random color
 function getColorFromBrightness(brightness){
   if(brightness/255 < .25){
-    return col0;
+    return backCol;
   }
   if(brightness/255 < .5){
     return col1;
@@ -140,10 +159,60 @@ function getColorFromBrightness(brightness){
   return col3;
 }
 
+//set new random colors
 function setNewColors(){
-  col0 = getRandomColor();
+  backCol = getRandomColor();
   col1 = getRandomColor();
   col2 = getRandomColor();
+}
+
+function clearScreen(){
+    background(backCol);
+
+}
+
+//randomize the colors and flow field. clear the screen
+function randomize(){
+  setNewColors();
+
+  backColorPicker = createInput(RGBToHex(int(backCol[0]),int(backCol[1]),int(backCol[2])), 'color');
+  backColorPicker.position(19, 475);
+
+  col1ColorPicker = createInput(RGBToHex(int(col1[0]),int(col1[1]),int(col1[2])), 'color');
+  col1ColorPicker.position(19, 505);
+  
+
+  col2ColorPicker = createInput(RGBToHex(int(col2[0]),int(col2[1]),int(col2[2])), 'color');
+  col2ColorPicker.position(19, 535);
+  clearScreen();
+
+  zOffset = random(200,1000);
+  
+}
+
+//convert a hex string into and array of r,g,b
+function hexToRGB(hexNum, arr) {
+    hexNum = hexNum.replace('#', '');
+
+    arr[0] = unhex(hexNum.substring(0,2));
+    arr[1] = unhex(hexNum.substring(2,4));
+    arr[2] = unhex(hexNum.substring(4,6));
+}
+
+//convert an R,g,b integers into a hex string
+function RGBToHex(r,g,b){
+  var c = color(int(r),int(g),int(b));
+  var hx = "#" + hex(r,2) + hex(g,2) + hex(b,2);
+  print(hx);
+  return hx;
+}
+
+//get the background color from the color picker and clear the screen
+function refreshBackground(){
+    hexToRGB(backColorPicker.value(), backCol);
+    clearScreen();
+
+  
 }
 
 
